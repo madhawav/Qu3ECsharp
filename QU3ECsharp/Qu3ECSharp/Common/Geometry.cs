@@ -1,13 +1,4 @@
-﻿//--------------------------------------------------------------------------------------------------
-
-/*
-Ported to CSharp by Madhawa Vidanapathirana 
-https://github.com/madhawav
-*/
-//--------------------------------------------------------------------------------------------------
-
-using Qu3ECSharp.Math;
-/**
+﻿/**
 @file	Geometry.h
 @author	Randy Gaul
 @date	10/10/2014
@@ -18,14 +9,24 @@ arising from the use of this software.
 Permission is granted to anyone to use this software for any purpose,
 including commercial applications, and to alter it and redistribute it
 freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented; you must not
-claim that you wrote the original software. If you use this software
-in a product, an acknowledgment in the product documentation would be
-appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not
-be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    2. Altered source versions must be plainly marked as such, and must not
+    be misrepresented as being the original software.
+    3. This notice may not be removed or altered from any source distribution.
 */
+//--------------------------------------------------------------------------------------------------
+
+/*
+Ported to CSharp by Madhawa Vidanapathirana 
+https://github.com/madhawav
+*/
+//--------------------------------------------------------------------------------------------------
+
+using Qu3ECSharp.Math;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -204,6 +205,12 @@ namespace Qu3ECSharp.Common
                 return start + dir * toi;
             }
         }
+
+        public Vector3 Start { get { return start; } set { start = value; } }
+        public Vector3 Direction { get { return dir; } set { dir = value; } }
+        public float Time { get { return t; } set { t = value; } }
+        public float TimeOfImpact { get { return toi; } set { toi = value; } }
+        public Vector3 Normal { get { return normal; } set { normal = value; } }
     };
 
 

@@ -205,13 +205,16 @@ namespace Qu3ECSharp.Math
         }
 
 
-        public static Matrix3 Identity()
+        public static Matrix3 Identity
         {
-            return new Matrix3(
-                1.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f,
-                0.0f, 0.0f, 1.0f
-                );
+            get
+            {
+                return new Matrix3(
+                    1.0f, 0.0f, 0.0f,
+                    0.0f, 1.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f
+                    );
+            }
         }
 
         public static Matrix3 Rotate(Vector3 x, Vector3 y, Vector3 z)

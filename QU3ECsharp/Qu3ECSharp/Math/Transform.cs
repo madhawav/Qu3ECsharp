@@ -84,7 +84,7 @@ namespace Qu3ECSharp.Math
             return r * v;
         }
 
-        public Transform Multiply(Transform t, Transform u)
+        public static Transform Multiply(Transform t, Transform u)
         {
             Transform v = new Transform();
             v._rotation = Multiply(t._rotation, u._rotation);
@@ -94,22 +94,22 @@ namespace Qu3ECSharp.Math
 
         //TODO: Implement Half Space Multiply
 
-        public Vector3 MultiplyTranspose(Transform tx, Vector3 v)
+        public static Vector3 MultiplyTranspose(Transform tx, Vector3 v)
         {
             return Matrix3.Transpose(tx.Rotation) * (v - tx.Position);
         }
 
-        public Vector3 MultiplyTranspose(Matrix3 r, Vector3 v)
+        public static Vector3 MultiplyTranspose(Matrix3 r, Vector3 v)
         {
             return Matrix3.Transpose(r) * v;
         }
 
-        public Matrix3 MultiplyTranspose(Matrix3 r, Matrix3 v)
+        public static Matrix3 MultiplyTranspose(Matrix3 r, Matrix3 v)
         {
             return Matrix3.Transpose(r) * v;
         }
 
-        public Transform MultiplyTranspose(Transform t, Transform u)
+        public static Transform MultiplyTranspose(Transform t, Transform u)
         {
             Transform v = new Transform();
             v.Rotation = MultiplyTranspose(t.Rotation, u.Rotation);
@@ -117,7 +117,7 @@ namespace Qu3ECSharp.Math
             return v;
         }
 
-        public void Identity(Transform t)
+        public static void Identity(Transform t)
         {
             t.Rotation = Matrix3.Identity();
             t.Position = Vector3.Identity();

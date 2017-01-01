@@ -31,12 +31,35 @@ be misrepresented as being the original software.
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Qu3ECSharp.Dynamics
 {
+
+    public class Util
+    {
+        private Util()
+        {
+        }
+
+        // Restitution mixing. The idea is to use the maximum bounciness, so bouncy
+        // objects will never not bounce during collisions.
+        public static float MixRestitution(Box A, Box B)
+        {
+            return System.Math.Max(A.Restitution, B.Restitution);
+        }
+
+        // Friction mixing. The idea is to allow a very low friction value to
+        // drive down the mixing result. Example: anything slides on ice.
+        public static float MixFriction(Box A, Box B)
+        {
+            return (float) System.Math.Sqrt(A.Friction * B.Friction);
+        }
+    }
+
     public class FeaturePair
     {
         private byte inR =0;
@@ -50,6 +73,18 @@ namespace Qu3ECSharp.Dynamics
         public byte InI { get { return inI; } set { inI = value; } }
         public byte OutI { get { return OutI; } set { OutI = value; } }
         public int Key { get { return key; } set { key = value; } }
+
+        public FeaturePair Clone()
+        {
+            FeaturePair cloned = new FeaturePair();
+            cloned.inR = inR;
+            cloned.outR = outR;
+            cloned.inI = inI;
+            cloned.outI = outI;
+            cloned.key = key;
+            return cloned;
+            
+        }
     }
 
     public class Manifold
@@ -81,11 +116,35 @@ namespace Qu3ECSharp.Dynamics
         public Vector3 Normal { get { return _normal; } set { _normal = value; } }
         public Vector3[] TangentVectors { get { return _tangentVectors; } set { _tangentVectors = value; } }
         public Contact[] Contacts { get { return _contacts; } set { _contacts = value; } }
-        public int ContactsCount { get { return _contactCount; } set { _contactCount = value; } }
+        public int ContactCount { get { return _contactCount; } set { _contactCount = value; } }
         public Manifold Next { get { return _next; } set { _next = value; } }
         public Manifold Previous { get { return _prev; } set { _prev = value; } }
         public bool Sensor { get { return _sensor; } set { _sensor = value; } }
 
+        public Manifold Clone()
+        {
+            Manifold cloned = new Manifold();
+            cloned.Previous = Previous;
+            cloned.ContactCount = ContactCount;
+            cloned.Contacts = new Contact[Contacts.Length];
+            for (int i = 0; i < Contacts.Length; i++)
+            {
+                if (Contacts[i] != null)
+                {
+                    cloned.Contacts[i] = Contacts[i].Clone();
+                }
+            }
+            cloned._A = A;
+            cloned._B = B;
+            cloned._next = Next;
+            cloned._normal = Normal;
+            cloned._sensor = Sensor;
+            cloned._tangentVectors[0] = TangentVectors[0];
+            cloned._tangentVectors[1] = TangentVectors[1];
+            return cloned;
+           
+
+        }
     };
 
 
@@ -111,6 +170,25 @@ namespace Qu3ECSharp.Dynamics
         public float[] TangentMass { get { return _tangentMass; } set { _tangentMass = value; } }
         public FeaturePair FeaturePair { get { return _fp; } set { _fp = value; } }
         public byte WarmStarted { get { return _warmStarted ; } set { _warmStarted = value; } }
+
+        public Contact Clone()
+        {
+            Contact cloned = new Contact();
+            cloned._position = _position;
+            cloned._penetration = _penetration;
+            cloned._normalImpulse = _normalImpulse;
+            cloned._tangentImpulse[0] = _tangentImpulse[0];
+            cloned._tangentImpulse[1] = _tangentImpulse[1];
+            cloned._bias = _bias;
+            cloned._normalMass = _normalMass;
+            cloned._tangentMass[0] = _tangentMass[0];
+            cloned._tangentMass[1] = _tangentMass[1];
+            cloned._fp = _fp.Clone();
+            cloned._warmStarted = _warmStarted;
+            return cloned;
+            
+
+        }
     }
 
 
@@ -134,11 +212,11 @@ namespace Qu3ECSharp.Dynamics
     {
         internal void SolveCollision()
         {
-            _manifold.ContactsCount = 0;
+            _manifold.ContactCount = 0;
 
             Collide.BoxtoBox(_manifold, _A, _B);
 
-            if (_manifold.ContactsCount > 0)
+            if (_manifold.ContactCount > 0)
             {
                 if ((m_flags & Flags.Colliding) != 0)
                     m_flags |= Flags.WasColliding;
@@ -168,12 +246,85 @@ namespace Qu3ECSharp.Dynamics
         internal ContactConstraint _next = null;
         internal ContactConstraint _prev = null;
 
+        public Box A
+        {
+            get { return _A; }
+            set { _A = value; }
+        }
+
+        public Box B
+        {
+            get { return _B; }
+            set { _B = value; }
+        }
+
+        public Body BodyA
+        {
+            get { return _bodyA; }
+            set { _bodyA = value; }
+        }
+
+        public Body BodyB
+        {
+            get { return _bodyB; }
+            set { _bodyB = value; }
+        }
+
+        public ContactEdge EdgeA
+        {
+            get { return _edgeA; }
+            set { _edgeA = value; }
+        }
+
+        public ContactEdge EdgeB
+        {
+            get { return _edgeB; }
+            set { _edgeB = value; }
+        }
+
+        public ContactConstraint Next
+        {
+            get { return _next; }
+            set { _next = value; }
+        }
+
+        public ContactConstraint Previous
+        {
+            get { return _prev; }
+            set { _prev = value; }
+        }
+
+        public float Friction
+        {
+            get { return _friction; }
+            set { _friction = value; }
+        }
+
+        public float Restitution
+        {
+            get { return _restitution; }
+            set { _restitution = value; }
+        }
+
+        public Manifold Manifold
+        {
+            get { return _manifold; }
+            set { _manifold = value; }
+        }
+
+        public Flags MFlags
+        {
+            get { return m_flags; }
+            set { m_flags = value; }
+        }
+
         internal float _friction = 0;
         internal float _restitution = 0;
 
         internal Manifold _manifold = null;
 
-        internal enum Flags
+        [Flags]
+        public enum Flags
         {
             None = 0x00000000,
             Colliding = 0x00000001, // Set when contact collides during a step
@@ -182,7 +333,11 @@ namespace Qu3ECSharp.Dynamics
         };
 
         internal Flags m_flags= 0;
-        
-        
+
+
+        public void Dispose()
+        {
+            Debug.WriteLine("Dispose Called");
+        }
     };
 }

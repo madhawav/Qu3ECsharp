@@ -38,7 +38,7 @@ namespace Qu3ECSharp.Common
     public class Geometry
     {
         private Geometry() { }
-        public void ComputeBasis(Vector3 a, out Vector3 b, out Vector3 c)
+        public static  void ComputeBasis(Vector3 a, out Vector3 b, out Vector3 c)
         {
             if (System.Math.Abs(a.X) >= (0.57735027f))
                 b = new Vector3(a.Y, -a.X, 0.0f);

@@ -67,7 +67,7 @@ namespace Qu3ECSharp.Dynamics
         }
 
         private Matrix3 m_invInertiaModel = new Matrix3();
-        private Matrix3 m_invInertiaWorld = new Matrix3();;
+        private Matrix3 m_invInertiaWorld = new Matrix3();
         private float m_mass = 0;
         private float m_invMass = 0;
         private Vector3 m_linearVelocity = new Vector3();
@@ -93,7 +93,7 @@ namespace Qu3ECSharp.Dynamics
         private float m_linearDamping = 0;
         private float m_angularDamping = 0;
 
-        private ContactEdge[] m_contactList = null;
+        private ContactEdge m_contactList = null;
 
 
         private Body(BodyDefinition def, Scene.Scene scene)
@@ -163,6 +163,23 @@ namespace Qu3ECSharp.Dynamics
                 m_tx = value;
                 SynchronizeProxies();
             }
+        }
+
+        private void SynchronizeProxies()
+        {
+            throw new NotImplementedException();
+        }
+
+        public ContactEdge ContactList
+        {
+            get { return m_contactList; }
+            set { m_contactList = value; }
+        }
+
+        public Box Boxes
+        {
+            get { return m_boxes; }
+            set { m_boxes = value; }
         }
 
 
@@ -254,6 +271,35 @@ namespace Qu3ECSharp.Dynamics
 
             m_localCenter = lc;
             m_worldCenter = Transform.Multiply(m_tx, lc);
+        }
+
+        public bool CanCollide(Body other)
+        {
+            if (this == other)
+                return false;
+
+            // Every collision must have at least one dynamic body involved
+            if ((m_flags & Flags.eDynamic) == 0 && (other.m_flags & Flags.eDynamic) == 0)
+                return false;
+
+            if ((m_layers & other.m_layers) == 0)
+                return false;
+
+            return true;
+        }
+
+        public void SetToAwake()
+        {
+            if ((m_flags & Flags.eAwake)==0)
+            {
+                m_flags |= Flags.eAwake;
+                m_sleepTime = 0.0f;
+            }
+        }
+
+        public bool IsAwake()
+        {
+            return (m_flags & Flags.eAwake) != 0 ? true : false;
         }
     }
 

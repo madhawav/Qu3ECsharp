@@ -184,7 +184,7 @@ namespace Qu3ECSharp.Collision
             }
         }
 
-        void ComputeIncidentFace(Transform itx, Vector3 e, Vector3 n, ref ClipVertex[] result)
+        private void ComputeIncidentFace(Transform itx, Vector3 e, Vector3 n, ref ClipVertex[] result)
         {
             n = -Transform.MultiplyTranspose(itx.Rotation, n);
             Vector3 absN = Vector3.Abs(n);
@@ -302,23 +302,23 @@ namespace Qu3ECSharp.Collision
                 result[i].v = Transform.Multiply(itx, result[i].v);
         }
 
-        bool InFront(float a)
+        private bool InFront(float a)
         {
             return a < 0.0f;
         }
 
-        bool Behind(float a)
+        private bool Behind(float a)
         {
             return a >= 0.0f;
         }
 
-        bool On(float a)
+        private bool On(float a)
         {
             return a < 0.005f && a > -0.005f;
         }
 
 
-        int Orthographic(float sign, float e, int axis, int clipEdge, ClipVertex[] input, ref ClipVertex[] output)
+        private int Orthographic(float sign, float e, int axis, int clipEdge, ClipVertex[] input, ref ClipVertex[] output)
         {
             int outCount = 0;
             ClipVertex a = input[input.Length - 1];
@@ -374,7 +374,7 @@ namespace Qu3ECSharp.Collision
         //--------------------------------------------------------------------------------------------------
         // Resources (also see q3BoxtoBox's resources):
         // http://www.randygaul.net/2013/10/27/sutherland-hodgman-clipping/
-        int Clip(Vector3 rPos, Vector3 e, byte[] clipEdges, Matrix3 basis, ClipVertex[] incident, ClipVertex[] outVerts, float[] outDepths)
+        private int Clip(Vector3 rPos, Vector3 e, byte[] clipEdges, Matrix3 basis, ClipVertex[] incident, ClipVertex[] outVerts, float[] outDepths)
         {
             int inCount = 4;
             int outCount;
@@ -426,7 +426,7 @@ namespace Qu3ECSharp.Collision
 
         }
 
-        void EdgesContact(out Vector3 CA, out Vector3 CB, Vector3 PA, Vector3 QA, Vector3 PB, Vector3 QB )
+        private void EdgesContact(out Vector3 CA, out Vector3 CB, Vector3 PA, Vector3 QA, Vector3 PB, Vector3 QB)
         {
             Vector3 DA = QA - PA;
             Vector3 DB = QB - PB;
@@ -445,5 +445,83 @@ namespace Qu3ECSharp.Collision
             CA = PA + DA * TA;
             CB = PB + DB * TB;
         }
+
+
+        private void SupportEdge(Transform tx, Vector3 e, Vector3 n, out Vector3 aOut, out Vector3 bOut)
+        {
+            n = Transform.MultiplyTranspose(tx.Rotation, n);
+            Vector3 absN = Vector3.Abs(n);
+            Vector3 a = new Vector3();
+            Vector3 b = new Vector3();
+
+            // x > y
+            if (absN.X > absN.Y)
+            {
+                // x > y > z
+                if (absN.Y > absN.Z)
+                {
+                    a.Set(e.X, e.Y, e.Z);
+                    b.Set(e.X, e.Y, -e.Z);
+                }
+
+                // x > z > y || z > x > y
+                else
+                {
+                    a.Set(e.X, e.Y, e.Z);
+                    b.Set(e.X, -e.Y, e.Z);
+                }
+            }
+
+            // y > x
+            else
+            {
+                // y > x > z
+                if (absN.X > absN.Z)
+                {
+                    a.Set(e.X, e.Y, e.Z);
+                    b.Set(e.X, e.Y, -e.Z);
+                }
+
+                // z > y > x || y > z > x
+                else
+                {
+                    a.Set(e.X, e.Y, e.Z);
+                    b.Set(-e.X, e.Y, e.Z);
+                }
+            }
+
+            float signx = Math.Math.Sign(n.X);
+            float signy = Math.Math.Sign(n.Y);
+            float signz = Math.Math.Sign(n.Z);
+
+            a.X *= signx;
+            a.Y *= signy;
+            a.Z *= signz;
+            b.X *= signx;
+            b.Y *= signy;
+            b.Z *= signz;
+
+            aOut = Transform.Multiply(tx, a);
+            bOut = Transform.Multiply(tx, b);
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Resources:
+        // http://www.randygaul.net/2014/05/22/deriving-obb-to-obb-intersection-sat/
+        // https://box2d.googlecode.com/files/GDC2007_ErinCatto.zip
+        // https://box2d.googlecode.com/files/Box2D_Lite.zip
+
+        void BoxtoBox(Manifold m, Box a, Box b)
+        {
+            Transform atx =  a->body->GetTransform();
+            q3Transform btx = b->body->GetTransform();
+            q3Transform aL = a->local;
+            q3Transform bL = b->local;
+            atx = q3Mul(atx, aL);
+            btx = q3Mul(btx, bL);
+            q3Vec3 eA = a->e;
+            q3Vec3 eB = b->e;
+        }
+
     }
 }

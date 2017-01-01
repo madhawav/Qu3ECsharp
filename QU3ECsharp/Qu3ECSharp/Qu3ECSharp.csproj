@@ -41,13 +41,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="Collision\Box.cs" />
+    <Compile Include="Collision\Collide.cs" />
+    <Compile Include="Common\Geometry.cs" />
+    <Compile Include="Common\Settings.cs" />
+    <Compile Include="Dynamics\Body.cs" />
+    <Compile Include="Dynamics\Contact.cs" />
     <Compile Include="Math\Math.cs" />
     <Compile Include="Math\Matrix3.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Math\Transform.cs" />
     <Compile Include="Math\Vector3.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Scene\Scene.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

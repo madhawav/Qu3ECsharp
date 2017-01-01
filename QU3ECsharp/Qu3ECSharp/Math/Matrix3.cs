@@ -88,6 +88,17 @@ namespace Qu3ECSharp.Math
             this._z = z;
         }
 
+        public void SetCell(int x, int y, float value)
+        {
+            Vector3[] rows = {_x, _y, _z};
+            Vector3 row = rows[x];
+            row[y] = value;
+            rows[x] = row;
+            _x = rows[0];
+            _y = rows[1];
+            _z = rows[2];
+        }
+
         public Vector3 this[int i]
         {
             get

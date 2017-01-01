@@ -119,8 +119,8 @@ namespace Qu3ECSharp.Math
 
         public static void Identity(Transform t)
         {
-            t.Rotation = Matrix3.Identity();
-            t.Position = Vector3.Identity();
+            t.Rotation = Matrix3.Identity;
+            t.Position = Vector3.Identity;
         }
 
         public static HalfSpace Multiply(Transform tx, HalfSpace p)

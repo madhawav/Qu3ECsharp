@@ -37,13 +37,13 @@ using System.Threading.Tasks;
 
 namespace Qu3ECSharp.Dynamics
 {
-    public struct FeaturePair
+    public class FeaturePair
     {
-        private byte inR;
-        private byte outR;
-        private byte inI;
-        private byte outI;
-        private int key;
+        private byte inR =0;
+        private byte outR =0;
+        private byte inI =0;
+        private byte outI =0;
+        private int key =0;
 
         public byte InR { get { return inR; } set { inR = value; } }
         public byte OutR { get { return outR; } set { outR = value; } }
@@ -88,20 +88,7 @@ namespace Qu3ECSharp.Dynamics
 
     };
 
-    public class ContactEdge
-    {
-        private Body _other = null;
-        private ContactConstraint _constraint = null;
-        private ContactEdge _next = null;
-        private ContactEdge _prev = null;
 
-        public Body Other { get { return _other; } set { _other = value; } }
-        public ContactConstraint Constraint { get { return _constraint; } set { _constraint = value; } }
-
-        public ContactEdge Next { get { return _next; } set { _next = value; } }
-        public ContactEdge Previous { get { return _prev; } set { _prev = value; } }
-
-    };
 
     public class Contact
     {
@@ -125,4 +112,77 @@ namespace Qu3ECSharp.Dynamics
         public FeaturePair FeaturePair { get { return _fp; } set { _fp = value; } }
         public byte WarmStarted { get { return _warmStarted ; } set { _warmStarted = value; } }
     }
+
+
+    public class ContactEdge
+    {
+        private Body _other = null;
+        private ContactConstraint _constraint = null;
+        private ContactEdge _next = null;
+        private ContactEdge _prev = null;
+
+        public Body Other { get { return _other; } set { _other = value; } }
+        public ContactConstraint Constraint { get { return _constraint; } set { _constraint = value; } }
+
+        public ContactEdge Next { get { return _next; } set { _next = value; } }
+        public ContactEdge Previous { get { return _prev; } set { _prev = value; } }
+
+    };
+
+
+    public class ContactConstraint
+    {
+        internal void SolveCollision()
+        {
+            _manifold.ContactsCount = 0;
+
+            Collide.BoxtoBox(_manifold, _A, _B);
+
+            if (_manifold.ContactsCount > 0)
+            {
+                if ((m_flags & Flags.Colliding) != 0)
+                    m_flags |= Flags.WasColliding;
+
+                else
+                    m_flags |= Flags.Colliding;
+            }
+
+            else
+            {
+                if ((m_flags & Flags.Colliding) != 0)
+                {
+                    m_flags &= ~Flags.Colliding;
+                    m_flags |= Flags.WasColliding;
+                }
+
+                else
+                    m_flags &= ~Flags.WasColliding;
+            }
+        }
+
+        internal Box _A, _B = null;
+        internal Body _bodyA, _bodyB = null;
+
+	    internal ContactEdge _edgeA = null;
+        internal ContactEdge _edgeB = null;
+        internal ContactConstraint _next = null;
+        internal ContactConstraint _prev = null;
+
+        internal float _friction = 0;
+        internal float _restitution = 0;
+
+        internal Manifold _manifold = null;
+
+        internal enum Flags
+        {
+            None = 0x00000000,
+            Colliding = 0x00000001, // Set when contact collides during a step
+            WasColliding = 0x00000002, // Set when two objects stop colliding
+            Island = 0x00000004, // For internal marking during island forming
+        };
+
+        internal Flags m_flags= 0;
+        
+        
+    };
 }

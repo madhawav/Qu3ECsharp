@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Qu3ECSharp.Dynamics;
 
 namespace Qu3ECSharp.Collision
 {
@@ -64,6 +65,8 @@ namespace Qu3ECSharp.Collision
         private object _userData = null;
         private bool _sensor = false;
 
+        private Body _body;
+
         //TODO: class q3Body* body;
 
         public object UserData
@@ -91,7 +94,13 @@ namespace Qu3ECSharp.Collision
         public float Restitution { get { return _restitution; } set { _restitution = value; } }
         
         public int BroadPhaseNext { get { return _broadPhaseNext; } set { _broadPhaseNext = value; } }
-        
+
+        public Body Body
+        {
+            get { return _body; }
+            set { _body = value; }
+        }
+
         public bool TestPoint(Transform tx, Vector3 p)
         {
             /**
@@ -283,6 +292,18 @@ namespace Qu3ECSharp.Collision
         {
             get { return m_sensor; }
             set { m_sensor = value; }
+        }
+
+        public Transform Tx
+        {
+            get { return m_tx; }
+            set { m_tx = value; }
+        }
+
+        public Vector3 Extent
+        {
+            get { return m_e; }
+            set { m_e = value; }
         }
     }
 }

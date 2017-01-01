@@ -130,9 +130,12 @@ namespace Qu3ECSharp.Math
         }
 
 
-        public static Vector3 Identity()
+        public static Vector3 Identity
         {
-            return new Vector3(0, 0, 0);
+            get
+            {
+                return new Vector3(0, 0, 0);
+            }
         }
 
         public static Vector3 Multiply(Vector3 a, Vector3 b)

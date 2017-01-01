@@ -46,7 +46,7 @@ namespace Qu3ECSharp.Collision
     {
         private Collide() { }
 
-        private bool TrackFaceAxis(ref int axis, int n, float s, ref float sMax, Vector3 normal, ref Vector3 axisNormal)
+        private static bool TrackFaceAxis(ref int axis, int n, float s, ref float sMax, Vector3 normal, ref Vector3 axisNormal)
         {
             //Find the least penetration????
 
@@ -63,7 +63,7 @@ namespace Qu3ECSharp.Collision
             return false;
         }
 
-        private bool TrackEdgeAxis(ref int axis, int n, float s, ref float sMax, Vector3 normal, ref Vector3 axisNormal)
+        private static bool TrackEdgeAxis(ref int axis, int n, float s, ref float sMax, Vector3 normal, ref Vector3 axisNormal)
         {
             if (s > 0.0f)
                 return true;
@@ -103,7 +103,7 @@ namespace Qu3ECSharp.Collision
         }
 
 
-        private void ComputeReferenceEdgesAndBasis(Vector3 eR, Transform rtx, Vector3 n, int axis, ref byte[] result, ref Matrix3 basis, ref Vector3 e)
+        private static void ComputeReferenceEdgesAndBasis(Vector3 eR, Transform rtx, Vector3 n, int axis, ref byte[] result, ref Matrix3 basis, ref Vector3 e)
         {
             n = Transform.MultiplyTranspose(rtx.Rotation, n);
             if (axis >= 3)
@@ -184,7 +184,7 @@ namespace Qu3ECSharp.Collision
             }
         }
 
-        private void ComputeIncidentFace(Transform itx, Vector3 e, Vector3 n, ref ClipVertex[] result)
+        private static void ComputeIncidentFace(Transform itx, Vector3 e, Vector3 n, ref ClipVertex[] result)
         {
             n = -Transform.MultiplyTranspose(itx.Rotation, n);
             Vector3 absN = Vector3.Abs(n);
@@ -302,23 +302,23 @@ namespace Qu3ECSharp.Collision
                 result[i].v = Transform.Multiply(itx, result[i].v);
         }
 
-        private bool InFront(float a)
+        private static bool InFront(float a)
         {
             return a < 0.0f;
         }
 
-        private bool Behind(float a)
+        private static bool Behind(float a)
         {
             return a >= 0.0f;
         }
 
-        private bool On(float a)
+        private static bool On(float a)
         {
             return a < 0.005f && a > -0.005f;
         }
 
 
-        private int Orthographic(float sign, float e, int axis, int clipEdge, ClipVertex[] input, ref ClipVertex[] output)
+        private static int Orthographic(float sign, float e, int axis, int clipEdge, ClipVertex[] input, ref ClipVertex[] output)
         {
             int outCount = 0;
             ClipVertex a = input[input.Length - 1];
@@ -374,7 +374,7 @@ namespace Qu3ECSharp.Collision
         //--------------------------------------------------------------------------------------------------
         // Resources (also see q3BoxtoBox's resources):
         // http://www.randygaul.net/2013/10/27/sutherland-hodgman-clipping/
-        private int Clip(Vector3 rPos, Vector3 e, byte[] clipEdges, Matrix3 basis, ClipVertex[] incident, ClipVertex[] outVerts, float[] outDepths)
+        private static int Clip(Vector3 rPos, Vector3 e, byte[] clipEdges, Matrix3 basis, ClipVertex[] incident, ClipVertex[] outVerts, float[] outDepths)
         {
             int inCount = 4;
             int outCount;
@@ -426,7 +426,7 @@ namespace Qu3ECSharp.Collision
 
         }
 
-        private void EdgesContact(out Vector3 CA, out Vector3 CB, Vector3 PA, Vector3 QA, Vector3 PB, Vector3 QB)
+        private static void EdgesContact(out Vector3 CA, out Vector3 CB, Vector3 PA, Vector3 QA, Vector3 PB, Vector3 QB)
         {
             Vector3 DA = QA - PA;
             Vector3 DB = QB - PB;
@@ -447,7 +447,7 @@ namespace Qu3ECSharp.Collision
         }
 
 
-        private void SupportEdge(Transform tx, Vector3 e, Vector3 n, out Vector3 aOut, out Vector3 bOut)
+        private static void SupportEdge(Transform tx, Vector3 e, Vector3 n, out Vector3 aOut, out Vector3 bOut)
         {
             n = Transform.MultiplyTranspose(tx.Rotation, n);
             Vector3 absN = Vector3.Abs(n);
@@ -511,16 +511,290 @@ namespace Qu3ECSharp.Collision
         // https://box2d.googlecode.com/files/GDC2007_ErinCatto.zip
         // https://box2d.googlecode.com/files/Box2D_Lite.zip
 
-        void BoxtoBox(Manifold m, Box a, Box b)
+        public static void BoxtoBox(Manifold m, Box a, Box b)
         {
-            Transform atx =  a->body->GetTransform();
-            q3Transform btx = b->body->GetTransform();
-            q3Transform aL = a->local;
-            q3Transform bL = b->local;
-            atx = q3Mul(atx, aL);
-            btx = q3Mul(btx, bL);
-            q3Vec3 eA = a->e;
-            q3Vec3 eB = b->e;
+            Transform atx = a.Body.Transform;
+            Transform btx = b.Body.Transform;
+            Transform aL = a.LocalTransform;
+            Transform bL = b.LocalTransform;
+            atx = Transform.Multiply(atx, aL);
+            btx = Transform.Multiply(btx, bL);
+
+            Vector3 eA = a.Extent;
+            Vector3 eB = b.Extent;
+
+            Matrix3 C = Matrix3.Transpose(atx.Rotation) * btx.Rotation;
+
+            Matrix3 absC = new Matrix3();
+            bool parallel = false;
+
+            float kCosTol = (float) (1.0e-6);
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {
+                    float val = System.Math.Abs(C[i][j]);
+
+                    absC.SetCell(i, j, val); //TODO: Check whether precedence is correct here
+                    //absC[i][j] = val;
+
+                    if (val + kCosTol >= 1.0f)
+                        parallel = true;
+                }
+            }
+
+            // Vector from center A to center B in A's space
+            Vector3 t = Transform.MultiplyTranspose(atx.Rotation, btx.Position - atx.Position);
+
+            // Query states
+            float s;
+            float aMax = -float.MaxValue;
+            float bMax = -float.MaxValue;
+            float eMax = -float.MaxValue;
+            int aAxis = ~0;
+            int bAxis = ~0;
+            int eAxis = ~0;
+            Vector3 nA = new Vector3();
+            Vector3 nB = new Vector3();
+            Vector3 nE = new Vector3();
+
+            // Face axis checks
+
+            // a's x axis
+            s = System.Math.Abs(t.X) - (eA.X + Vector3.Dot(absC.Column0(), eB));
+            if (TrackFaceAxis(ref aAxis, 0, s, ref aMax, atx.Rotation.eX, ref nA))
+                return;
+
+            // a's y axis
+            s = System.Math.Abs(t.Y) - (eA.Y + Vector3.Dot(absC.Column1(), eB));
+            if (TrackFaceAxis(ref aAxis, 1, s, ref aMax, atx.Rotation.eY, ref nA))
+                return;
+
+            // a's z axis
+            s = System.Math.Abs(t.Z) - (eA.Z + Vector3.Dot(absC.Column2(), eB));
+            if (TrackFaceAxis(ref aAxis, 2, s, ref aMax, atx.Rotation.eZ, ref nA))
+                return;
+
+            // b's x axis
+            s = System.Math.Abs(Vector3.Dot(t, C.eX)) - (eB.X + Vector3.Dot(absC.eX, eA));
+            if (TrackFaceAxis(ref bAxis, 3, s, ref bMax, btx.Rotation.eX, ref nB))
+                return;
+
+            // b's y axis
+            s = System.Math.Abs(Vector3.Dot(t, C.eY)) - (eB.Y + Vector3.Dot(absC.eY, eA));
+            if (TrackFaceAxis(ref bAxis, 4, s, ref bMax, btx.Rotation.eY, ref nB))
+                return;
+
+            // b's z axis
+            s = System.Math.Abs(Vector3.Dot(t, C.eZ)) - (eB.Z + Vector3.Dot(absC.eZ, eA));
+            if (TrackFaceAxis(ref bAxis, 5, s, ref bMax, btx.Rotation.eZ, ref nB))
+                return;
+
+
+            if (!parallel)
+            {
+                // Edge axis checks
+                float rA;
+                float rB;
+
+                // Cross( a.x, b.x )
+                rA = eA.Y * absC[0][2] + eA.Z * absC[0][1];
+                rB = eB.Y * absC[2][0] + eB.Z * absC[1][0];
+                s = System.Math.Abs(t.Z * C[0][1] - t.Y * C[0][2]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 6, s, ref eMax, new Vector3(0.0f, -C[0][2], C[0][1]), ref nE))
+                    return;
+
+                // Cross( a.x, b.y )
+                rA = eA.Y * absC[1][2] + eA.Z * absC[1][1];
+                rB = eB.X * absC[2][0] + eB.Z * absC[0][0];
+                s = System.Math.Abs(t.Z * C[1][1] - t.Y * C[1][2]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 7, s, ref eMax, new Vector3(0.0f, -C[1][2], C[1][1]), ref nE))
+                    return;
+
+                // Cross( a.x, b.z )
+                rA = eA.Y * absC[2][2] + eA.Z * absC[2][1];
+                rB = eB.X * absC[1][0] + eB.Y * absC[0][0];
+                s = System.Math.Abs(t.Z * C[2][1] - t.Y * C[2][2]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 8, s, ref eMax, new Vector3(0.0f, -C[2][2], C[2][1]), ref nE))
+                    return;
+
+                // Cross( a.y, b.x )
+                rA = eA.X * absC[0][2] + eA.Z * absC[0][0];
+                rB = eB.Y * absC[2][1] + eB.Z * absC[1][1];
+                s = System.Math.Abs(t.X * C[0][2] - t.Z * C[0][0]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 9, s, ref eMax, new Vector3(C[0][2], 0.0f, -C[0][0]), ref nE))
+                    return;
+
+                // Cross( a.y, b.y )
+                rA = eA.X * absC[1][2] + eA.Z * absC[1][0];
+                rB = eB.X * absC[2][1] + eB.Z * absC[0][1];
+                s = System.Math.Abs(t.X * C[1][2] - t.Z * C[1][0]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 10, s, ref eMax, new Vector3(C[1][2], 0.0f, -C[1][0]), ref nE))
+                    return;
+
+                // Cross( a.y, b.z )
+                rA = eA.X * absC[2][2] + eA.Z * absC[2][0];
+                rB = eB.X * absC[1][1] + eB.Y * absC[0][1];
+                s = System.Math.Abs(t.X * C[2][2] - t.Z * C[2][0]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 11, s, ref eMax, new Vector3(C[2][2], 0.0f, -C[2][0]), ref nE))
+                    return;
+
+                // Cross( a.z, b.x )
+                rA = eA.X * absC[0][1] + eA.Y * absC[0][0];
+                rB = eB.Y * absC[2][2] + eB.Z * absC[1][2];
+                s = System.Math.Abs(t.Y * C[0][0] - t.X * C[0][1]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 12, s, ref eMax, new Vector3(-C[0][1], C[0][0], 0.0f), ref nE))
+                    return;
+
+                // Cross( a.z, b.y )
+                rA = eA.X * absC[1][1] + eA.Y * absC[1][0];
+                rB = eB.X * absC[2][2] + eB.Z * absC[0][2];
+                s = System.Math.Abs(t.Y * C[1][0] - t.X * C[1][1]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 13, s, ref eMax, new Vector3(-C[1][1], C[1][0], (0.0f)), ref nE))
+                    return;
+
+                // Cross( a.z, b.z )
+                rA = eA.X * absC[2][1] + eA.Y * absC[2][0];
+                rB = eB.X * absC[1][2] + eB.Y * absC[0][2];
+                s = System.Math.Abs(t.Y * C[2][0] - t.X * C[2][1]) - (rA + rB);
+                if (TrackEdgeAxis(ref eAxis, 14, s, ref eMax, new Vector3(-C[2][1], C[2][0], 0.0f), ref nE))
+                    return;
+            }
+
+            // Artificial axis bias to improve frame coherence
+            float kRelTol = 0.95f;
+            float kAbsTol = 0.01f;
+            int axis;
+            float sMax;
+            Vector3 n;
+
+            float faceMax = System.Math.Max(aMax, bMax);
+
+            if (kRelTol * eMax > faceMax + kAbsTol)
+            {
+                axis = eAxis;
+                sMax = eMax;
+                n = nE;
+            }
+
+            else
+            {
+                if (kRelTol * bMax > aMax + kAbsTol)
+                {
+                    axis = bAxis;
+                    sMax = bMax;
+                    n = nB;
+                }
+
+                else
+                {
+                    axis = aAxis;
+                    sMax = aMax;
+                    n = nA;
+                }
+            }
+
+            if (Vector3.Dot(n, btx.Position - atx.Position) < 0.0f)
+                n = -n;
+
+            Debug.Assert(axis != ~0);
+
+            if (axis < 6)
+            {
+                Transform rtx;
+                Transform itx;
+                Vector3 eR;
+                Vector3 eI;
+                bool flip;
+
+                if (axis < 3)
+                {
+                    rtx = atx;
+                    itx = btx;
+                    eR = eA;
+                    eI = eB;
+                    flip = false;
+                }
+
+                else
+                {
+                    rtx = btx;
+                    itx = atx;
+                    eR = eB;
+                    eI = eA;
+                    flip = true;
+                    n = -n;
+                }
+
+                // Compute reference and incident edge information necessary for clipping
+                ClipVertex[] incident = new ClipVertex[4];
+                ComputeIncidentFace(itx, eI, n, ref incident);
+                byte[] clipEdges = new byte[4];
+                Matrix3 basis = new Matrix3();
+                Vector3 e = new Vector3();
+                ComputeReferenceEdgesAndBasis(eR, rtx, n, axis, ref clipEdges, ref basis, ref e);
+
+                // Clip the incident face against the reference face side planes
+                ClipVertex[] outputs = new ClipVertex[8];
+                float[] depths = new float[8];
+                int outNum;
+                outNum = Clip(rtx.Position, e, clipEdges, basis, incident, outputs, depths);
+
+                if (outNum != 0)
+                {
+                    m.ContactCount = outNum;
+                    m.Normal = flip ? -n : n;
+
+                    for (int i = 0; i < outNum; ++i)
+                    {
+                        Contact c = m.Contacts[i];
+
+                        FeaturePair pair = outputs[i].f;
+
+                        if (flip)
+                        {
+                            byte temp = pair.InI;
+                            pair.InI = pair.InR;
+                            pair.InR = temp;
+
+                            temp = pair.OutI;
+                            pair.OutI = pair.OutR;
+                            pair.OutR = temp;
+                        }
+                        outputs[i].f = pair;
+                        c.FeaturePair = outputs[i].f;
+
+                        c.Position = outputs[i].v;
+                        c.Penetration = depths[i];
+                    }
+                }
+            }
+            else
+            {
+                n = atx.Rotation * n;
+
+                if (Vector3.Dot(n, btx.Position - atx.Position) < (0.0f))
+                    n = -n;
+
+                Vector3 PA, QA;
+                Vector3 PB, QB;
+                SupportEdge(atx, eA, n, out PA, out QA);
+                SupportEdge(btx, eB, -n, out PB, out QB);
+
+                Vector3 CA, CB;
+                EdgesContact(out CA, out CB, PA, QA, PB, QB);
+
+                m.Normal = n;
+                m.ContactCount = 1;
+
+                Contact[] c = m.Contacts;
+                FeaturePair pair = new FeaturePair();
+                pair.Key = axis;
+                c[0].FeaturePair = pair;
+                c[0].Penetration = sMax;
+                c[0].Position = (CA + CB) * (0.5f);
+            }
+
         }
 
     }

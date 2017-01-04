@@ -50,6 +50,7 @@
     <Compile Include="Dynamics\Contact.cs" />
     <Compile Include="Dynamics\ContactManager.cs" />
     <Compile Include="Dynamics\ContactSolver.cs" />
+    <Compile Include="Dynamics\Island.cs" />
     <Compile Include="Math\Math.cs" />
     <Compile Include="Math\Matrix3.cs" />
     <Compile Include="Math\Quaternion.cs" />

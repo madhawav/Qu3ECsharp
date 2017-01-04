@@ -71,6 +71,10 @@ namespace Qu3ECSharp.Math
             }
         }
 
+        public static float Invert(float a)
+        {
+            return a != 0.0f ? 1.0f / a : 0.0f;
+        }
 
         public static float Clamp01(float val)
         {

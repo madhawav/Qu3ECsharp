@@ -273,7 +273,7 @@ namespace Qu3ECSharp.Dynamics
             set { m_q = value; }
         }
 
-        public double SleepTime { get { return m_sleepTime; } set { m_sleepTime = value; } }
+        public float SleepTime { get { return m_sleepTime; } set { m_sleepTime = value; } }
         public int IslandIndex { get {return m_islandIndex;} set { m_islandIndex = value; } }
 
 

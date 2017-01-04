@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Qu3ECSharp.Common;
 using Qu3ECSharp.Math;
 
 namespace Qu3ECSharp.Dynamics
@@ -200,18 +201,182 @@ namespace Qu3ECSharp.Dynamics
     }
     public class ContactSolver
     {
-        //q3Island* m_island;
+        private Island m_island = null;
+       
         ContactConstraintState[] m_contacts = null;
         int m_contactCount = 0;
         //q3VelocityState* m_velocities;
-
+        VelocityState[] m_velocities  = null;
         bool m_enableFriction = false;
 
         //TODO: Incomplete!
 
         public void Initialize(Island island)
         {
-            throw new NotImplementedException();
+            m_island = island;
+            m_contactCount = island.ContactCount;
+            m_contacts = island.ContactStates;
+            m_velocities = m_island.Velocities;
+            m_enableFriction = island.EnableFriction;
+        }
+
+        public void PreSolve(float dt)
+        {
+            for (int i = 0; i < m_contactCount; ++i)
+            {
+                ContactConstraintState cs = m_contacts[i];
+
+                Vector3 vA = m_velocities[cs.IndexA].V;
+                Vector3 wA = m_velocities[cs.IndexA].W;
+                Vector3 vB = m_velocities[cs.IndexB].V;
+                Vector3 wB = m_velocities[cs.IndexB].W;
+
+                for (int j = 0; j < cs.ContactCount; ++j)
+                {
+                    ContactState c = cs.Contacts[j];
+
+                    // Precalculate JM^-1JT for contact and friction constraints
+                    Vector3 raCn = Vector3.Cross(c.Ra, cs.Normal);
+                    Vector3 rbCn = Vector3.Cross(c.Rb, cs.Normal);
+                    float nm = cs.MA + cs.MB;
+                    float[] tm = new float[2];
+                    tm[0] = nm;
+                    tm[1] = nm;
+
+                    nm += Vector3.Dot(raCn, cs.IA * raCn) + Vector3.Dot(rbCn, cs.IB * rbCn);
+                    c.NormalMass = Math.Math.Invert(nm);
+
+                    for (int ii = 0; ii < 2; ++ii)
+                    {
+                        Vector3 raCt = Vector3.Cross(cs.TangentVectors[ii], c.Ra);
+                        Vector3 rbCt = Vector3.Cross(cs.TangentVectors[ii], c.Rb);
+                        tm[ii] += Vector3.Dot(raCt, cs.IA * raCt) + Vector3.Dot(rbCt, cs.IB * rbCt);
+                        c.TangentMass[ii] = Math.Math.Invert(tm[ii]);
+                    }
+
+                    // Precalculate bias factor
+                    c.Bias = -Settings.BAUMGARTE * (1.0f / dt) * System.Math.Min(0.0f, c.Penetration + Settings.PENETRATION_SLOP);
+
+                    // Warm start contact
+                    Vector3 P = cs.Normal * c.NormalImpulse;
+
+                    if (m_enableFriction)
+                    {
+                        P += cs.TangentVectors[0] * c.TangentImpulse[0];
+                        P += cs.TangentVectors[1] * c.TangentImpulse[1];
+                    }
+
+                    vA -= P * cs.MA;
+                    wA -= cs.IA * Vector3.Cross(c.Ra, P);
+
+                    vB += P * cs.MB;
+                    wB += cs.IB * Vector3.Cross(c.Rb, P);
+
+                    // Add in restitution bias
+                    float dv = Vector3.Dot(vB + Vector3.Cross(wB, c.Rb) - vA - Vector3.Cross(wA, c.Ra), cs.Normal);
+
+                    if (dv < -(1.0f))
+                        c.Bias += -(cs.Restitution) * dv;
+                }
+
+                m_velocities[cs.IndexA].V = vA;
+                m_velocities[cs.IndexA].W = wA;
+                m_velocities[cs.IndexB].V = vB;
+                m_velocities[cs.IndexB].W = wB;
+            }
+        }
+
+        public void Solve()
+        {
+            for (int i = 0; i < m_contactCount; ++i)
+            {
+               ContactConstraintState cs = m_contacts[i];
+
+                Vector3 vA = m_velocities[cs.IndexA].V;
+                Vector3 wA = m_velocities[cs.IndexA].W;
+                Vector3 vB = m_velocities[cs.IndexB].V;
+                Vector3 wB = m_velocities[cs.IndexB].W;
+
+                for (int j = 0; j < cs.ContactCount; ++j)
+                {
+                    ContactState c = cs.Contacts[j];
+
+                    // relative velocity at contact
+                    Vector3 dv = vB + Vector3.Cross(wB, c.Rb) - vA - Vector3.Cross(wA, c.Ra);
+
+                    // Friction
+                    if (m_enableFriction)
+                    {
+                        for (int ii = 0; ii < 2; ++ii)
+                        {
+                            float lambda = -Vector3.Dot(dv, cs.TangentVectors[ii]) * c.TangentMass[ii];
+
+                            // Calculate frictional impulse
+                            float maxLambda = cs.Friction * c.NormalImpulse;
+
+                            // Clamp frictional impulse
+                            float oldPT = c.TangentImpulse[ii];
+                            c.TangentImpulse[ii] = Math.Math.Clamp(-maxLambda, maxLambda, oldPT + lambda);
+                            lambda = c.TangentImpulse[ii] - oldPT;
+
+                            // Apply friction impulse
+                            Vector3 impulse = cs.TangentVectors[ii] * lambda;
+                            vA -= impulse * cs.MA;
+                            wA -= cs.IA * Vector3.Cross(c.Ra, impulse);
+
+                            vB += impulse * cs.MB;
+                            wB += cs.IB * Vector3.Cross(c.Rb, impulse);
+                        }
+                    }
+
+                    // Normal
+                    {
+                        dv = vB + Vector3.Cross(wB, c.Rb) - vA - Vector3.Cross(wA, c.Ra);
+
+                        // Normal impulse
+                        float vn = Vector3.Dot(dv, cs.Normal);
+
+                        // Factor in positional bias to calculate impulse scalar j
+                        float lambda = c.NormalMass * (-vn + c.Bias);
+
+                        // Clamp impulse
+                        float tempPN = c.NormalImpulse;
+                        c.NormalImpulse = (float)System.Math.Max(tempPN + lambda, 0.0f);
+                        lambda = c.NormalImpulse - tempPN;
+
+                        // Apply impulse
+                        Vector3 impulse = cs.Normal * lambda;
+                        vA -= impulse * cs.MA;
+                        wA -= cs.IA * Vector3.Cross(c.Ra, impulse);
+
+                        vB += impulse * cs.MB;
+                        wB += cs.IB * Vector3.Cross(c.Rb, impulse);
+                    }
+                }
+
+                m_velocities[cs.IndexA].V = vA;
+                m_velocities[cs.IndexA].W = wA;
+                m_velocities[cs.IndexB].V = vB;
+                m_velocities[cs.IndexB].W = wB;
+            }
+        }
+
+        public void ShutDown()
+        {
+            for (int i = 0; i < m_contactCount; ++i)
+            {
+                ContactConstraintState c = m_contacts[i];
+                ContactConstraint cc = m_island.Contacts[i];
+
+                for (int j = 0; j < c.ContactCount; ++j)
+                {
+                    Contact oc = cc.Manifold.Contacts[j];
+                    ContactState cs = c.Contacts[j];
+                    oc.NormalImpulse = cs.NormalImpulse;
+                    oc.TangentImpulse[0] = cs.TangentImpulse[0];
+                    oc.TangentImpulse[1] = cs.TangentImpulse[1];
+                }
+            }
         }
     }
 }

@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BroadPhase\BroadPhase.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Collision\Box.cs" />
     <Compile Include="Collision\Collide.cs" />
@@ -47,6 +48,8 @@
     <Compile Include="Common\Settings.cs" />
     <Compile Include="Dynamics\Body.cs" />
     <Compile Include="Dynamics\Contact.cs" />
+    <Compile Include="Dynamics\ContactManager.cs" />
+    <Compile Include="Dynamics\ContactSolver.cs" />
     <Compile Include="Math\Math.cs" />
     <Compile Include="Math\Matrix3.cs" />
     <Compile Include="Math\Quaternion.cs" />

@@ -68,6 +68,7 @@ namespace Qu3ECSharp.Dynamics
 
         private Matrix3 m_invInertiaModel = new Matrix3();
         private Matrix3 m_invInertiaWorld = new Matrix3();
+    
         private float m_mass = 0;
         private float m_invMass = 0;
         private Vector3 m_linearVelocity = new Vector3();
@@ -181,6 +182,99 @@ namespace Qu3ECSharp.Dynamics
             get { return m_boxes; }
             set { m_boxes = value; }
         }
+
+        public Flags BodyFlags
+        {
+            get { return m_flags; }
+            set { m_flags = value; }
+        }
+
+        public float GravityScale
+        {
+            get { return m_gravityScale; }
+            set { m_gravityScale = value; }
+        }
+
+        public Matrix3 InvInertiaModel
+        {
+            get { return m_invInertiaModel; }
+            set { m_invInertiaModel = value; }
+        }
+
+        public Vector3 LinearVelocity
+        {
+            get { return m_linearVelocity; }
+            set { m_linearVelocity = value; }
+        }
+
+        public Vector3 AngularVelocity
+        {
+            get { return m_angularVelocity; }
+            set { m_angularVelocity = value; }
+        }
+
+        public Vector3 Force
+        {
+            get { return m_force; }
+            set { m_force = value; }
+        }
+
+        public Vector3 Torque
+        {
+            get { return m_torque; }
+            set { m_torque = value; }
+        }
+
+        public float InverseMass
+        {
+            get { return m_invMass; }
+            set { m_invMass = value; }
+        }
+
+        public float Mass
+        {
+            get { return m_mass; }
+            set { m_mass = value; }
+        }
+
+        public Matrix3 InverseInertiaWorld
+        {
+            get { return m_invInertiaWorld; }
+            set { m_invInertiaWorld = value; }
+        }
+
+        public float AngularDamping
+        {
+            get { return m_angularDamping; }
+            set { m_angularDamping = value; }
+        }
+
+        public float LinearDamping
+        {
+            get { return m_linearDamping; }
+            set { m_linearDamping = value; }
+        }
+
+        public Vector3 LocalCenter
+        {
+            get { return m_localCenter; }
+            set { m_localCenter = value; }
+        }
+
+        public Vector3 WorldCenter
+        {
+            get { return m_worldCenter; }
+            set { m_worldCenter = value; }
+        }
+
+        public Quaternion Quaternion
+        {
+            get { return m_q; }
+            set { m_q = value; }
+        }
+
+        public double SleepTime { get { return m_sleepTime; } set { m_sleepTime = value; } }
+        public int IslandIndex { get {return m_islandIndex;} set { m_islandIndex = value; } }
 
 
         // Adds a box to this body. Boxes are all defined in local space
@@ -300,6 +394,16 @@ namespace Qu3ECSharp.Dynamics
         public bool IsAwake()
         {
             return (m_flags & Flags.eAwake) != 0 ? true : false;
+        }
+
+        public void ApplyLinearForce(Vector3 vector3)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetToSleep()
+        {
+            throw new NotImplementedException();
         }
     }
 

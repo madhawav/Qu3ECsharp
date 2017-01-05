@@ -60,7 +60,7 @@ namespace Qu3ECSharp.Collision
         private float _friction = 0.0f;
         private float _restitution = 0.0f;
         private float _density = 0.0f;
-        private int _broadPhaseNext = 0;
+        private int _broadPhaseIndex = 0;
 
         private object _userData = null;
         private bool _sensor = false;
@@ -93,13 +93,14 @@ namespace Qu3ECSharp.Collision
       
         public float Restitution { get { return _restitution; } set { _restitution = value; } }
         
-        public int BroadPhaseNext { get { return _broadPhaseNext; } set { _broadPhaseNext = value; } }
+        public int BroadPhaseIndex { get { return _broadPhaseIndex; } set { _broadPhaseIndex = value; } }
 
         public Body Body
         {
             get { return _body; }
             set { _body = value; }
         }
+        
 
         public bool TestPoint(Transform tx, Vector3 p)
         {

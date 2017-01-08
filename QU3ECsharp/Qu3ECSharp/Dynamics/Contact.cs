@@ -102,6 +102,18 @@ namespace Qu3ECSharp.Dynamics
 
         bool _sensor = false;
 
+        public Manifold()
+        {
+            for (int i = 0; i < _tangentVectors.Length; i++)
+            {
+                TangentVectors[i] = new Vector3();
+            }
+            for (int i = 0; i < _contacts.Length; i++)
+            {
+                _contacts[i] = new Contact();
+            }
+        }
+
         public void SetPair(Box a, Box b)
         {
             this._A = a;
@@ -241,8 +253,8 @@ namespace Qu3ECSharp.Dynamics
         internal Box _A, _B = null;
         internal Body _bodyA, _bodyB = null;
 
-	    internal ContactEdge _edgeA = null;
-        internal ContactEdge _edgeB = null;
+	    internal ContactEdge _edgeA = new ContactEdge();
+        internal ContactEdge _edgeB = new ContactEdge();
         internal ContactConstraint _next = null;
         internal ContactConstraint _prev = null;
 
@@ -321,7 +333,7 @@ namespace Qu3ECSharp.Dynamics
         internal float _friction = 0;
         internal float _restitution = 0;
 
-        internal Manifold _manifold = null;
+        internal Manifold _manifold = new Manifold();
 
         [Flags]
         public enum Flags

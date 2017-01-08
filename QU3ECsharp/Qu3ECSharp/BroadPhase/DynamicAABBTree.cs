@@ -461,6 +461,9 @@ namespace Qu3ECSharp.BroadPhase
             m_count = 0;
             m_nodes = new Node[m_capacity];
 
+            for(int i = 0; i < m_nodes.Length; i++)
+                m_nodes[i] = new Node();
+
             AddToFreeList(0);
         }
 

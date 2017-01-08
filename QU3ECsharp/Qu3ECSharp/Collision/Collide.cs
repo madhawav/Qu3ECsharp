@@ -81,7 +81,7 @@ namespace Qu3ECSharp.Collision
             return false;
         }
 
-        struct ClipVertex
+        class ClipVertex
         {
             public Vector3 v;
             public FeaturePair f;
@@ -98,8 +98,31 @@ namespace Qu3ECSharp.Collision
                 }
             }
 
+            public ClipVertex()
+            {
+                f = new FeaturePair();
+                f.Key = ~0;
+            }
+
             public Vector3 Vector { get { return v; } set { v = value; } }
-            public FeaturePair FeaturePair { get { return f; } set { f = value; } }
+
+            public FeaturePair FeaturePair
+            {
+                get
+                {
+                    if (f == null)
+                    {
+                        f = new FeaturePair();
+                        f.Key = ~0;
+                    }
+                    return f;
+                    
+                }
+                set
+                {
+                    f = value;
+                }
+            }
         }
 
 
@@ -728,6 +751,8 @@ namespace Qu3ECSharp.Collision
 
                 // Compute reference and incident edge information necessary for clipping
                 ClipVertex[] incident = new ClipVertex[4];
+                for(int i = 0; i < incident.Length;i++)
+                    incident[i] = new ClipVertex();
                 ComputeIncidentFace(itx, eI, n, ref incident);
                 byte[] clipEdges = new byte[4];
                 Matrix3 basis = new Matrix3();
@@ -736,6 +761,9 @@ namespace Qu3ECSharp.Collision
 
                 // Clip the incident face against the reference face side planes
                 ClipVertex[] outputs = new ClipVertex[8];
+                for (int i = 0; i < outputs.Length; i++)
+                    outputs[i] = new ClipVertex();
+
                 float[] depths = new float[8];
                 int outNum;
                 outNum = Clip(rtx.Position, e, clipEdges, basis, incident, outputs, depths);

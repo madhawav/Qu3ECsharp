@@ -124,6 +124,8 @@ namespace Qu3ECSharp.Math
             return v;
         }
 
+        
+
         public static void Identity(Transform t)
         {
             t.Rotation = Matrix3.Identity;

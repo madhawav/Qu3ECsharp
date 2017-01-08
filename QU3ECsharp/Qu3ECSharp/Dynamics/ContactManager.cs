@@ -28,6 +28,7 @@ https://github.com/madhawav
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,6 +51,7 @@ namespace Qu3ECSharp.Dynamics
             m_contactList = null;
             m_contactCount = 0;
             m_contactListener = null;
+            m_broadphase = new BroadPhase.BroadPhase(this);
         }
 
         public BroadPhase.BroadPhase Broadphase
@@ -72,6 +74,7 @@ namespace Qu3ECSharp.Dynamics
 
         public void AddContact(Box A, Box B)
         {
+            //Debug.Assert(A!=B);
             Body bodyA = A.Body;
             Body bodyB = B.Body;
             if (!bodyA.CanCollide(bodyB))

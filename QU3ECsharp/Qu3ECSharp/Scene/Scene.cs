@@ -179,8 +179,14 @@ namespace Qu3ECSharp.Scene
             island.ContactCapacity = m_contactManager.ContactCount;
             island.Bodies = new Body[m_bodyCount];
             island.Velocities = new VelocityState[m_bodyCount];
+            for(int i = 0; i < island.Velocities.Length;i++)
+                island.Velocities[i] = new VelocityState();
             island.Contacts = new ContactConstraint[island.ContactCapacity];
+            for (int i = 0; i < island.Contacts.Length; i++)
+                island.Contacts[i] = new ContactConstraint();
             island.ContactStates = new ContactConstraintState[island.ContactCapacity];
+            for (int i = 0; i < island.ContactStates.Length; i++)
+                island.ContactStates[i] = new ContactConstraintState();
             island.AllowSleep = m_allowSleep;
             island.EnableFriction = m_enableFriction;
             island.BodyCount = 0;

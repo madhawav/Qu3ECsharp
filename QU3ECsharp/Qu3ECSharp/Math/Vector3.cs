@@ -120,7 +120,7 @@ namespace Qu3ECSharp.Math
                     _y = value;
                 else if (i == 2)
                     _z = value;
-                throw new IndexOutOfRangeException("Index should be between 0 and 2");
+                else throw new IndexOutOfRangeException("Index should be between 0 and 2");
             }
         }
 

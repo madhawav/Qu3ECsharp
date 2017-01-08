@@ -1,6 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Diagnostics;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Qu3ECSharp.Collision;
+using Qu3ECSharp.Dynamics;
+using Qu3ECSharp.Math;
+using Qu3ECSharp.Scene;
 
 namespace DemoApp
 {
@@ -24,9 +29,14 @@ namespace DemoApp
         /// related content.  Calling base.Initialize will enumerate through any components
         /// and initialize them as well.
         /// </summary>
+        private Scene scene = null;
+
+        private Body body = null;
+        private Body body2 = null;
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
+            scene = new Scene(1.0f / 60.0f);
 
             base.Initialize();
         }
@@ -39,6 +49,30 @@ namespace DemoApp
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            
+            BodyDefinition bodyDefinition = new BodyDefinition();
+            bodyDefinition.BodyType = BodyType.DynamicBody;
+            bodyDefinition.Position = new Qu3ECSharp.Math.Vector3(0,5,0);
+            
+            body = scene.CreateBody(bodyDefinition);
+
+            BoxDefinition boxDefinition = new BoxDefinition();
+            Transform localTransform = new Transform();
+            Transform.Identity(localTransform);
+            boxDefinition.Set(localTransform,new Qu3ECSharp.Math.Vector3(1.0f,1.0f,1.0f));
+            body.AddBox(boxDefinition);
+
+
+
+            bodyDefinition = new BodyDefinition();
+            bodyDefinition.BodyType = BodyType.StaticBody;
+            body2 = scene.CreateBody(bodyDefinition);
+            boxDefinition = new BoxDefinition();
+            localTransform = new Transform();
+            Transform.Identity(localTransform);
+            boxDefinition.Set(localTransform,new Qu3ECSharp.Math.Vector3(10.0f,1.0f,10.0f));
+            body2.AddBox(boxDefinition);
 
             // TODO: use this.Content to load your game content here
         }
@@ -63,6 +97,9 @@ namespace DemoApp
                 Exit();
 
             // TODO: Add your update logic here
+
+            scene.Step();
+            this.Window.Title = body.Transform.Position.Y.ToString() + " " + body2.Transform.Position.Y.ToString();
 
             base.Update(gameTime);
         }

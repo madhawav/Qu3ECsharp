@@ -101,6 +101,7 @@ namespace Qu3ECSharp.BroadPhase
         public BroadPhase(ContactManager manager)
         {
             m_manager = manager;
+            m_tree = new DynamicAABBTree();
 
             m_pairCount = 0;
             m_pairCapacity = 64;
@@ -160,7 +161,7 @@ namespace Qu3ECSharp.BroadPhase
             // Sort pairs to expose duplicates
 
            
-            System.Array.Sort<ContactPair>(m_pairBuffer,new ContactPairComparer());
+            System.Array.Sort<ContactPair>(m_pairBuffer,0,m_pairCount,new ContactPairComparer());
             //std::sort(m_pairBuffer, m_pairBuffer + m_pairCount, ContactPairSort);
 
             // Queue manifolds for solving

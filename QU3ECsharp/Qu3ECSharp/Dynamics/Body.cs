@@ -1,22 +1,4 @@
-﻿
-//--------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------
-
-
-//--------------------------------------------------------------------------------------------------
-
-/*
-Ported to CSharp by Madhawa Vidanapathirana 
-https://github.com/madhawav
-*/
-//--------------------------------------------------------------------------------------------------
-
-
-
-using Qu3ECSharp.Collision;
-using Qu3ECSharp.Math;
-/**
+﻿/**
 @file	q3Body.h
 @author	Randy Gaul
 @date	10/10/2014
@@ -34,9 +16,20 @@ appreciated but is not required.
 2. Altered source versions must be plainly marked as such, and must not
 be misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
+
+Ported to CSharp by Madhawa Vidanapathirana 
+https://github.com/madhawav
 */
+//--------------------------------------------------------------------------------------------------
+
+
+
+using Qu3ECSharp.Collision;
+using Qu3ECSharp.Math;
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -166,9 +159,33 @@ namespace Qu3ECSharp.Dynamics
             }
         }
 
+        public void SetTransform(Vector3 position, Vector3 axis, float angle)
+        {
+            m_worldCenter = position;
+            m_q.Set(axis, angle);
+            m_tx.Rotation = m_q.ToMatrix();
+
+            SynchronizeProxies();
+        }
+
         private void SynchronizeProxies()
         {
-            throw new NotImplementedException();
+            //Updates broadphase with new details
+
+            BroadPhase.BroadPhase broadphase = m_scene.ContactManager.Broadphase;
+            m_tx.Position = m_worldCenter - Transform.Multiply(m_tx.Rotation, m_localCenter);
+           
+            AABB aabb = new AABB();
+            Transform tx = m_tx.Clone();
+
+            Box box = m_boxes;
+            
+            while (box != null)
+            {
+                aabb = box.ComputeAABB(tx);
+                broadphase.Update(box.BroadPhaseIndex,aabb);
+                box = box.Next;
+            }
         }
 
         public ContactEdge ContactList
@@ -204,13 +221,39 @@ namespace Qu3ECSharp.Dynamics
         public Vector3 LinearVelocity
         {
             get { return m_linearVelocity; }
-            set { m_linearVelocity = value; }
+            set
+            {
+               
+                // Velocity of static bodies cannot be adjusted
+                if ((m_flags & Flags.eStatic) != 0)
+                    Debug.Assert(false);
+
+                if (Vector3.Dot(value, value) > 0.0f)
+                {
+                    SetToAwake();
+                }
+
+                m_linearVelocity = value;
+            }
         }
+
+
 
         public Vector3 AngularVelocity
         {
             get { return m_angularVelocity; }
-            set { m_angularVelocity = value; }
+            set
+            {
+                // Velocity of static bodies cannot be adjusted
+                if ((m_flags & Flags.eStatic)!=0)
+                    Debug.Assert(false);
+
+                if (Vector3.Dot(value, value) > 0.0f)
+                {
+                    SetToAwake();
+                }
+                m_angularVelocity = value;
+            }
         }
 
         public Vector3 Force
@@ -270,11 +313,24 @@ namespace Qu3ECSharp.Dynamics
         public Quaternion Quaternion
         {
             get { return m_q; }
-            set { m_q = value; }
+           
         }
+
 
         public float SleepTime { get { return m_sleepTime; } set { m_sleepTime = value; } }
         public int IslandIndex { get {return m_islandIndex;} set { m_islandIndex = value; } }
+
+        public int Layers
+        {
+            get { return m_layers; }
+            set { m_layers = value; }
+        }
+
+        public object UserData
+        {
+            get { return m_userData; }
+            set { m_userData = value; }
+        }
 
 
         // Adds a box to this body. Boxes are all defined in local space
@@ -299,15 +355,88 @@ namespace Qu3ECSharp.Dynamics
 
             CalculateMassData();
 
-            m_scene->m_contactManager.m_broadphase.InsertBox(box, aabb);
-            m_scene->m_newBox = true;
-
+            m_scene.ContactManager.Broadphase.InsertBox(box,aabb);
+            m_scene.NewBox = true;
+        
             return box;
         }
 
-        
+        // Removes this box from the body and broadphase. Forces the body
+        // to recompute its mass if the body is dynamic. Frees the memory
+        // pointed to by the box pointer.
+        public void RemoveBox(Box box)
+        {
+            Debug.Assert(box != null);
+            Debug.Assert(box.Body == this);
 
-        private void CalculateMassData()
+            Box node = m_boxes;
+
+            bool found = false;
+            if (node == box)
+            {
+                m_boxes = node.Next;
+                found = true;
+            }
+
+            else
+            {
+                while (node != null)
+                {
+                    if (node.Next == box)
+                    {
+                        node.Next = box.Next;
+                        found = true;
+                        break;
+                    }
+
+                    node = node.Next;
+                }
+            }
+
+            // This shape was not connected to this body.
+            Debug.Assert(found);
+
+            // Remove all contacts associated with this shape
+            ContactEdge edge = m_contactList;
+            while (edge != null)
+            {
+                ContactConstraint contact = edge.Constraint;
+                edge = edge.Next;
+
+                Box A = contact.A;
+                Box B = contact.B;
+
+                if (box == A || box == B)
+                    m_scene.ContactManager.RemoveContact(contact);
+            }
+
+            m_scene.ContactManager.Broadphase.RemoveBox(box);
+
+            CalculateMassData();
+
+            box = null;
+        }
+
+
+        // Removes all boxes from this body and the broadphase.
+        public void RemoveAllBoxes()
+        {
+            while (m_boxes != null)
+            {
+                Box next = m_boxes.Next;
+
+                m_scene.ContactManager.Broadphase.RemoveBox(m_boxes);
+                m_boxes = null;
+
+                m_boxes = next;
+            }
+
+            m_scene.ContactManager.RemoveContactsFromBody(this);
+        }
+
+     
+
+    private void CalculateMassData()
         {
             Matrix3 inertia = Matrix3.Diagonal(0.0f);
             m_invInertiaModel = Matrix3.Diagonal(0.0f);
@@ -396,15 +525,79 @@ namespace Qu3ECSharp.Dynamics
             return (m_flags & Flags.eAwake) != 0 ? true : false;
         }
 
-        public void ApplyLinearForce(Vector3 vector3)
+        public void ApplyLinearForce(Vector3 force)
         {
-            throw new NotImplementedException();
+            m_force += force * m_mass;
+
+            SetToAwake();
+        }
+        public void ApplyForceAtWorldPoint(Vector3 force, Vector3 point)
+        { 
+            m_force += force * m_mass;
+            m_torque += Vector3.Cross(point - m_worldCenter, force);
+
+            SetToAwake();
         }
 
+        public void ApplyLinearImpulse(Vector3 impulse)
+        {
+            m_linearVelocity += impulse * m_invMass;
+
+            SetToAwake();
+        }
+
+        public void ApplyLinearImpulseAtWorldPoint(Vector3 impulse, Vector3 point)
+        {
+            m_linearVelocity += impulse * m_invMass;
+            m_angularVelocity += m_invInertiaWorld * Vector3.Cross(point - m_worldCenter, impulse);
+
+            SetToAwake();
+        }
+
+        public void ApplyTorque(Vector3 torque)
+        {
+            m_torque += torque;
+        }
         public void SetToSleep()
         {
-            throw new NotImplementedException();
+            m_flags &= ~Flags.eAwake;
+            m_sleepTime = 0.0f;
+            m_linearVelocity = Vector3.Identity;
+            m_angularVelocity = Vector3.Identity;
+            m_force = Vector3.Identity;
+            m_torque = Vector3.Identity;
+            
         }
+
+        public Vector3 GetLocalPoint(Vector3 p)
+        {
+            return Transform.MultiplyTranspose(m_tx, p);
+        }
+
+        public Vector3 GetLocalVector(Vector3 v)
+        {
+            return Transform.MultiplyTranspose(m_tx.Rotation, v);
+        }
+
+        public Vector3 GetWorldPoint(Vector3 p)
+        {
+            return Transform.Multiply(m_tx, p);
+        }
+
+        public Vector3 GetWorldVector(Vector3 v)
+        {
+            return Transform.Multiply(m_tx.Rotation, v);
+        }
+
+        public Vector3 GetVelocityAtWorldPoint(Vector3 p)
+        {
+            Vector3 directionToPoint = p - m_worldCenter;
+            Vector3 relativeAngularVel = Vector3.Cross(m_angularVelocity, directionToPoint);
+
+            return m_linearVelocity + relativeAngularVel;
+        }
+
+
     }
 
     public class BodyDefinition

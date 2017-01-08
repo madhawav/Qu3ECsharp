@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BroadPhase\BroadPhase.cs" />
+    <Compile Include="BroadPhase\DynamicAABBTree.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Collision\Box.cs" />
     <Compile Include="Collision\Collide.cs" />

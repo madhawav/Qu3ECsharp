@@ -35,8 +35,22 @@ using Qu3ECSharp.Dynamics;
 
 namespace Qu3ECSharp.Scene
 {
-    class Scene
+    public class Scene
     {
+        private ContactManager m_contactManager = null;
+        private bool m_newBox;
+
+        public ContactManager ContactManager
+        {
+            get { return m_contactManager; }
+            set { m_contactManager = value; }
+        }
+
+        public bool NewBox
+        {
+            get { return m_newBox; }
+            set { m_newBox = value; }
+        }
     }
 
 

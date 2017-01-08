@@ -52,6 +52,18 @@ namespace Qu3ECSharp.Dynamics
             m_contactListener = null;
         }
 
+        public BroadPhase.BroadPhase Broadphase
+        {
+            get { return m_broadphase; }
+            set { m_broadphase = value; }
+        }
+
+        public ContactListener ContactListener
+        {
+            get { return m_contactListener; }
+            set { m_contactListener = value; }
+        }
+
         public void AddContact(Box A, Box B)
         {
             Body bodyA = A.Body;
@@ -226,7 +238,7 @@ namespace Qu3ECSharp.Dynamics
                 }
 
                 // Check if contact should persist
-                if (!m_broadphase.TestOverlap(A.BroadPhaseNext, B.BroadPhaseNext))
+                if (!m_broadphase.TestOverlap(A.BroadPhaseIndex, B.BroadPhaseIndex))
                 {
                     ContactConstraint next = constraint.Next;
                     RemoveContact(constraint);

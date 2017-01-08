@@ -40,6 +40,13 @@ namespace Qu3ECSharp.Math
         private Vector3 _position;
         private Matrix3 _rotation;
 
+        public Transform Clone()
+        {
+            Transform result = new Transform();
+            result.Position = _position;
+            result.Rotation = _rotation;
+            return result;
+        }
         public Vector3 Position
         {
             get { return _position; }

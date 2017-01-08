@@ -64,6 +64,12 @@ namespace Qu3ECSharp.Dynamics
             set { m_contactListener = value; }
         }
 
+        public int ContactCount
+        {
+            get { return m_contactCount; }
+            set { m_contactCount = value; }
+        }
+
         public void AddContact(Box A, Box B)
         {
             Body bodyA = A.Body;

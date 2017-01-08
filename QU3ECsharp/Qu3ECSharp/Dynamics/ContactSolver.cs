@@ -205,11 +205,9 @@ namespace Qu3ECSharp.Dynamics
        
         ContactConstraintState[] m_contacts = null;
         int m_contactCount = 0;
-        //q3VelocityState* m_velocities;
+        
         VelocityState[] m_velocities  = null;
         bool m_enableFriction = false;
-
-        //TODO: Incomplete!
 
         public void Initialize(Island island)
         {

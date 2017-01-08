@@ -113,7 +113,7 @@ namespace Qu3ECSharp.Dynamics
             set { m_dt = value; }
         }
 
-        public Vector3 MGravity
+        public Vector3 Gravity
         {
             get { return m_gravity; }
             set { m_gravity = value; }
@@ -242,7 +242,7 @@ namespace Qu3ECSharp.Dynamics
                     if (sqrLinVel > linTol || cbAngVel > angTol)
                     {
                         minSleepTime = 0.0f;
-                        body.SleepTime = 0.0;
+                        body.SleepTime = 0.0f;
                     }
 
                     else

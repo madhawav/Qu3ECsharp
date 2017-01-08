@@ -90,7 +90,7 @@ namespace Qu3ECSharp.Dynamics
         private ContactEdge m_contactList = null;
 
 
-        private Body(BodyDefinition def, Scene.Scene scene)
+        internal Body(BodyDefinition def, Scene.Scene scene)
         {
             m_linearVelocity = def.LinearVelocity;
             m_angularVelocity = def.AngularVelocity;
@@ -168,7 +168,7 @@ namespace Qu3ECSharp.Dynamics
             SynchronizeProxies();
         }
 
-        private void SynchronizeProxies()
+        public void SynchronizeProxies()
         {
             //Updates broadphase with new details
 
@@ -313,7 +313,8 @@ namespace Qu3ECSharp.Dynamics
         public Quaternion Quaternion
         {
             get { return m_q; }
-           
+
+            set { m_q = value; }
         }
 
 
@@ -330,6 +331,18 @@ namespace Qu3ECSharp.Dynamics
         {
             get { return m_userData; }
             set { m_userData = value; }
+        }
+
+        public Body Next
+        {
+            get { return m_next; }
+            set { m_next = value; }
+        }
+
+        public Body Previous
+        {
+            get { return m_prev; }
+            set { m_prev = value; }
         }
 
 

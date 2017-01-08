@@ -76,6 +76,11 @@ namespace Qu3ECSharp.BroadPhase
         private DynamicAABBTree m_tree = null;
         private int m_currentIndex = 0;
 
+        public DynamicAABBTree Tree
+        {
+            get { return m_tree; }
+        }
+
         private void BufferMove(int id)
         {
             if (m_moveCount == m_moveCapacity)
